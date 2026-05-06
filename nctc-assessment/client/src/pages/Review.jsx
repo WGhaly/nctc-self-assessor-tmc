@@ -52,6 +52,7 @@ export default function Review() {
         inventionTitle: data.inventionTitle,
         description: data.description,
         sector: data.sector,
+        sectorOther: data.sectorOther,
         trl: data.trl,
         mrl: data.mrl,
         crl: data.crl,

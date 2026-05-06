@@ -14,6 +14,21 @@ const SECTORS = [
   { value: 'other', label: 'Other' },
 ];
 
+const STATUSES = [
+  { value: '', label: 'All Statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'reviewed', label: 'Reviewed' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'rejected', label: 'Rejected' },
+];
+
+const STATUS_STYLES = {
+  pending:  'bg-yellow-100 text-yellow-700',
+  reviewed: 'bg-blue-100 text-blue-700',
+  accepted: 'bg-green-100 text-green-700',
+  rejected: 'bg-red-100 text-red-600',
+};
+
 function authHeader() {
   const token = sessionStorage.getItem('adminToken');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -25,9 +40,11 @@ export default function AdminDashboard() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   // Filters
   const [sector, setSector] = useState('');
+  const [status, setStatus] = useState('');
   const [trl, setTrl] = useState('');
   const [mrl, setMrl] = useState('');
   const [crl, setCrl] = useState('');
@@ -40,6 +57,7 @@ export default function AdminDashboard() {
     try {
       const params = {};
       if (sector) params.sector = sector;
+      if (status) params.status = status;
       if (trl) params.trl = trl;
       if (mrl) params.mrl = mrl;
       if (crl) params.crl = crl;
@@ -59,7 +77,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [sector, trl, mrl, crl, navigate]);
+  }, [sector, status, trl, mrl, crl, navigate]);
 
   useEffect(() => {
     if (!sessionStorage.getItem('adminToken')) {
@@ -76,15 +94,13 @@ export default function AdminDashboard() {
   }
 
   function handleExportCsv() {
-    const token = sessionStorage.getItem('adminToken');
     const params = new URLSearchParams();
     if (sector) params.set('sector', sector);
+    if (status) params.set('status', status);
     if (trl) params.set('trl', trl);
     if (mrl) params.set('mrl', mrl);
     if (crl) params.set('crl', crl);
-    // Trigger download by setting Authorization in URL is not possible —
-    // so we fetch as blob and create a download link
-    axios.get(`/api/admin/export/csv?${params}`, {
+    axios.get(`/api/admin/submissions/export/csv?${params}`, {
       headers: authHeader(),
       responseType: 'blob',
     }).then(res => {
@@ -97,8 +113,26 @@ export default function AdminDashboard() {
     }).catch(() => alert('Export failed.'));
   }
 
+  async function handleDelete(id, name) {
+    if (!window.confirm(`Delete submission from "${name}"? This cannot be undone.`)) return;
+    setDeletingId(id);
+    try {
+      await axios.delete(`/api/admin/submissions/${id}`, { headers: authHeader() });
+      setSubmissions(prev => prev.filter(s => s.id !== id));
+      setTotal(prev => prev - 1);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate('/admin');
+      } else {
+        alert('Failed to delete submission.');
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   function clearFilters() {
-    setSector(''); setTrl(''); setMrl(''); setCrl('');
+    setSector(''); setStatus(''); setTrl(''); setMrl(''); setCrl('');
   }
 
   return (
@@ -133,6 +167,17 @@ export default function AdminDashboard() {
               className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-electric outline-none"
             >
               {SECTORS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Status</label>
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-electric outline-none"
+            >
+              {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
 
@@ -192,7 +237,7 @@ export default function AdminDashboard() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    {['Date', 'Name', 'Affiliation', 'Invention Title', 'Sector', 'TRL', 'MRL', 'CRL', ''].map(h => (
+                    {['Date', 'Name', 'Affiliation', 'Invention Title', 'Sector', 'Status', 'TRL', 'MRL', 'CRL', ''].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                         {h}
                       </th>
@@ -211,6 +256,11 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3">
                         <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full capitalize">{s.sector}</span>
                       </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${STATUS_STYLES[s.status] || 'bg-gray-100 text-gray-600'}`}>
+                          {s.status || 'pending'}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <span className="bg-electric/10 text-electric font-bold text-xs px-2 py-0.5 rounded-full">{s.trl}</span>
                       </td>
@@ -221,12 +271,21 @@ export default function AdminDashboard() {
                         <span className="bg-amber-100 text-amber-700 font-bold text-xs px-2 py-0.5 rounded-full">{s.crl}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => navigate(`/admin/submissions/${s.id}`)}
-                          className="text-electric hover:text-blue-700 text-xs font-semibold transition-colors"
-                        >
-                          View →
-                        </button>
+                        <div className="flex items-center gap-3 whitespace-nowrap">
+                          <button
+                            onClick={() => navigate(`/admin/submissions/${s.id}`)}
+                            className="text-electric hover:text-blue-700 text-xs font-semibold transition-colors"
+                          >
+                            View →
+                          </button>
+                          <button
+                            onClick={() => handleDelete(s.id, s.full_name)}
+                            disabled={deletingId === s.id}
+                            className="text-red-400 hover:text-red-600 text-xs font-semibold transition-colors disabled:opacity-40"
+                          >
+                            {deletingId === s.id ? '...' : 'Delete'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

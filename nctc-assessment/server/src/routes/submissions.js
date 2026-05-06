@@ -34,6 +34,11 @@ router.post('/', [
     .isLength({ max: 300 })
     .withMessage('Description must be under 300 characters'),
   body('sector').isIn(VALID_SECTORS).withMessage('Invalid sector'),
+  body('sectorOther')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 300 })
+    .withMessage('Sector description must be under 300 characters'),
   body('trl').isInt({ min: 1, max: 9 }).withMessage('TRL must be 1–9'),
   body('mrl').isInt({ min: 1, max: 10 }).withMessage('MRL must be 1–10'),
   body('crl').isInt({ min: 1, max: 9 }).withMessage('CRL must be 1–9'),
@@ -47,19 +52,19 @@ router.post('/', [
 
   const {
     fullName, phone, affiliation, inventionTitle,
-    description, sector, trl, mrl, crl, language,
+    description, sector, sectorOther, trl, mrl, crl, language,
   } = req.body;
 
   try {
     const result = await db.query(
       `INSERT INTO submissions
          (full_name, phone, affiliation, invention_title, description,
-          sector, trl, mrl, crl, language, declaration)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE)
+          sector, sector_other, trl, mrl, crl, language, declaration)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE)
        RETURNING id, created_at`,
       [
         fullName, phone, affiliation, inventionTitle,
-        description || null, sector,
+        description || null, sector, sectorOther || null,
         parseInt(trl), parseInt(mrl), parseInt(crl), language,
       ]
     );
