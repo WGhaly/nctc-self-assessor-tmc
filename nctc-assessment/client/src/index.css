@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-ar: 'Cairo', sans-serif;
+    --font-en: 'Inter', sans-serif;
+  }
+
+  html[lang="ar"] body {
+    font-family: var(--font-ar);
+  }
+
+  html[lang="en"] body {
+    font-family: var(--font-en);
+  }
+
+  body {
+    @apply bg-nearblack text-white antialiased;
+    font-family: var(--font-ar);
+  }
+}
+
+@layer components {
+  /* Gradient background for pages */
+  .page-bg {
+    background: linear-gradient(135deg, #01093d 0%, #01093d 60%, #161616 100%);
+    min-height: 100vh;
+  }
+
+  /* White card panels */
+  .card {
+    @apply bg-white text-nearblack rounded-2xl shadow-lg;
+  }
+
+  /* Level card states */
+  .level-card-active {
+    @apply bg-white border-2 border-electric rounded-xl shadow-xl;
+  }
+
+  .level-card-selected {
+    @apply bg-white border-2 border-electric rounded-xl shadow-md;
+  }
+
+  .level-card-reviewed {
+    @apply bg-white/10 border border-white/20 rounded-xl;
+  }
+
+  .level-card-locked {
+    @apply bg-white/5 border border-white/10 rounded-xl opacity-50;
+  }
+
+  /* Badge pills */
+  .badge-trl {
+    @apply bg-electric text-white text-xs font-bold px-3 py-1 rounded-full;
+  }
+
+  .badge-mrl {
+    @apply bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full;
+  }
+
+  .badge-crl {
+    @apply bg-amber-600 text-white text-xs font-bold px-3 py-1 rounded-full;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply bg-electric hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply border-2 border-white/40 hover:border-white text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 active:scale-95;
+  }
+
+  /* Outline button */
+  .btn-outline {
+    @apply border-2 border-electric text-electric hover:bg-electric hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 active:scale-95;
+  }
+
+  /* Form input */
+  .form-input {
+    @apply w-full bg-white border-2 border-gray-200 focus:border-electric rounded-xl px-4 py-3 text-nearblack placeholder-gray-400 outline-none transition-colors duration-200;
+  }
+
+  .form-input-error {
+    @apply border-red-400 focus:border-red-500;
+  }
+
+  /* Progress step */
+  .step-done {
+    @apply bg-electric text-white;
+  }
+
+  .step-active {
+    @apply bg-white text-electric ring-2 ring-electric ring-offset-2;
+  }
+
+  .step-pending {
+    @apply bg-white/20 text-white/50;
+  }
+}
+
+/* Smooth transitions for RTL/LTR switch */
+* {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+/* Fade-in animation for level cards */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInDown 0.35s ease-out;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+}
